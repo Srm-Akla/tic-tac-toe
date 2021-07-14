@@ -4,31 +4,18 @@
 #include <time.h>
 #include <string.h>
 
-
-typedef struct _win_border_struct {
-	chtype 	ls, rs, ts, bs, 
-	 	tl, tr, bl, br;
-}WIN_BORDER;
-
-typedef struct _WIN_struct {
-
-	int startx, starty;
-	int height, width;
-	WIN_BORDER border;
-}WIN;
-
 typedef struct _tile{
-    int x, y;
-    char value;
+    int x, y, h, w;
+    
 }TILE;
 
-void create_box(WIN *p_win, bool flag);
-void init_game();
+void init_tile(TILE *tile, int n);
+void create_board(TILE *tile, int n);
 
 int main(int argc, char *argv[]){
-    WIN win;
+
     TILE tile;
-    int ch;
+    int ch, n;
     int board[3][3];
 
     int player = rand() % 2;
@@ -39,6 +26,7 @@ int main(int argc, char *argv[]){
 	printf("Type here!");
 	exit(99);
     }
+    n = atoi(argv[1]);
 
     initscr();			
     start_color();		
@@ -47,89 +35,63 @@ int main(int argc, char *argv[]){
     keypad(stdscr, TRUE);	
     noecho();
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
-    init_pair(2, COLOR_RED, COLOR_BLACK);
 
-    /* Initialize the window parameters */
 
     attron(COLOR_PAIR(1));
     printw("Press F1 to exit");
-    mvprintw(5,(COLS - win.width)/3,"Human:");
-    mvprintw(6,(COLS - win.width)/3,"Computer:");
     refresh();
     attroff(COLOR_PAIR(1));
-    
-    attron(COLOR_PAIR(2));
-    create_box(&win, TRUE);
-    move(win.starty+1,win.startx+1);
-    attroff(COLOR_PAIR(2));
-    while((ch = getch()) != KEY_F(1)){	
+   
+    /* Initialize the window parameters */
+    init_tile(&tile, n);
+    create_board(&tile, n);
+    refresh();
+
+   // attron(COLOR_PAIR(2));
+   // move(win.starty+1,win.startx+1);
+   // attroff(COLOR_PAIR(2));
+    while((ch = getch()) != KEY_F(1)){
 	switch(ch){	
-	    case KEY_LEFT:
-		move(win.starty,(win.startx-=16));
-		break;
 	    case KEY_RIGHT:
-		move(win.starty,(win.startx+=16));
+		move(4,3);
+		clrtoeol();
+		mvprintw(3,3,"Space works");
 		break;
-	    case KEY_UP:
-		move((win.starty-=4),win.startx);
+	    case KEY_LEFT:
+		move(3,3);
+		clrtoeol();
+		mvprintw(4,3,"Space works");
 		break;
-	    case KEY_DOWN:
-		move((win.starty+=4),win.startx);
-		break;	
-	    case KEY_F(2):
-		mvprintw(10,10,"Helloworld");
-		break;
-	    }
+	}
     }
+    
     endwin();			/* End curses mode		  */
     return 0;
 }
 
+void init_tile(TILE *tile, int n){
 
-void create_box(WIN *p_win, bool flag){	
-    int x, y, w, h;
+    tile->h=6;
+    tile->w=8;
+    tile->y=(LINES - (tile->h)*n)/2;
+    tile->x=(COLS - (tile->w)*n)/2;
 
-    p_win->height = 9;
-    p_win->width = 45;
-    p_win->starty = (LINES - p_win->height)/2;	
-    p_win->startx = (COLS - p_win->width)/2;
+}
 
-    p_win->border.ls = '|';
-    p_win->border.rs = '|';
-    p_win->border.ts = '-';
-    p_win->border.bs = '-';
-    p_win->border.tl = '*';
-    p_win->border.tr = '*';
-    p_win->border.bl = '*';
-    p_win->border.br = '*';
-
-    x = p_win->startx;
-    y = p_win->starty;
-    w = p_win->width;
-    h = p_win->height;
-
-    if(flag == TRUE){	
-	mvaddch(y, x, p_win->border.tl);
-	mvaddch(y, x + w, p_win->border.tr);
-	mvaddch(y + h, x, p_win->border.bl);
-	mvaddch(y + h, x + w, p_win->border.br);
-	mvhline(y, x + 1, p_win->border.ts, w - 1);
-	mvhline(y + h, x + 1, p_win->border.bs, w - 1);
-	
-	//Inside Lines
-	mvhline(y + 3, x + 1, p_win->border.ts, w - 1);
-	mvhline(y + 6, x + 1, p_win->border.ts, w - 1);
-	mvvline(y + 1, x + 15, p_win->border.ls, h - 1);
-	mvvline(y + 1, x + 30, p_win->border.ls, h - 1);
-	
-	mvvline(y + 1, x, p_win->border.ls, h - 1);
-	mvvline(y + 1, x + w, p_win->border.rs, h - 1);
-
-    }else{
-	for(int j = y; j <= y + h; ++j)
-	    for(int i = x; i <= x + w; ++i)
-		mvaddch(j, i, ' ');
-    }			    
+void create_board(TILE *tile,int n){
+    
+    WINDOW *local_win;
+    local_win = newwin(tile->h, tile->w, tile->y, tile->x);
     refresh();
+    box(local_win,0 ,0);
+    wrefresh(local_win);		
 
+    for(int i=0;i<n;i++){
+	for(int j=0;j<n;j++){
+    
+	    mvprintw((tile->y+tile->h)+i,(tile->x+tile->w)+j,"%d -- %d", i, j);
+    
+	}
+	printf("\n");
+    }
 }
