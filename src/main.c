@@ -17,15 +17,28 @@ typedef struct _WIN_struct {
 	WIN_BORDER border;
 }WIN;
 
+typedef struct _tile{
+    int x, y;
+    char value;
+}TILE;
+
 void create_box(WIN *p_win, bool flag);
+void init_game();
 
 int main(int argc, char *argv[]){
     WIN win;
+    TILE tile;
     int ch;
+    int board[3][3];
 
     int player = rand() % 2;
     char human = (player == 1) ? 'X' : 'O';
     char computer = (player != 1) ? 'X' : 'O';
+    
+    if(argc <2){
+	printf("Type here!");
+	exit(99);
+    }
 
     initscr();			
     start_color();		
@@ -40,6 +53,8 @@ int main(int argc, char *argv[]){
 
     attron(COLOR_PAIR(1));
     printw("Press F1 to exit");
+    mvprintw(5,(COLS - win.width)/3,"Human:");
+    mvprintw(6,(COLS - win.width)/3,"Computer:");
     refresh();
     attroff(COLOR_PAIR(1));
     
@@ -72,7 +87,6 @@ int main(int argc, char *argv[]){
 
 
 void create_box(WIN *p_win, bool flag){	
-    int i, j;
     int x, y, w, h;
 
     p_win->height = 9;
@@ -84,10 +98,10 @@ void create_box(WIN *p_win, bool flag){
     p_win->border.rs = '|';
     p_win->border.ts = '-';
     p_win->border.bs = '-';
-    p_win->border.tl = '+';
-    p_win->border.tr = '+';
-    p_win->border.bl = '+';
-    p_win->border.br = '+';
+    p_win->border.tl = '*';
+    p_win->border.tr = '*';
+    p_win->border.bl = '*';
+    p_win->border.br = '*';
 
     x = p_win->startx;
     y = p_win->starty;
@@ -112,8 +126,8 @@ void create_box(WIN *p_win, bool flag){
 	mvvline(y + 1, x + w, p_win->border.rs, h - 1);
 
     }else{
-	for(j = y; j <= y + h; ++j)
-	    for(i = x; i <= x + w; ++i)
+	for(int j = y; j <= y + h; ++j)
+	    for(int i = x; i <= x + w; ++i)
 		mvaddch(j, i, ' ');
     }			    
     refresh();
