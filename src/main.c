@@ -3,95 +3,121 @@
 #include <ncurses.h>
 #include <time.h>
 #include <string.h>
+#include <stdbool.h>
+
+#define	WIDTH  8
+#define	HEIGHT 6
 
 typedef struct _tile{
     int x, y, h, w;
+    int state;
     
 }TILE;
 
 void init_tile(TILE *tile, int n);
-void create_board(TILE *tile, int n);
+WINDOW *create_newwin(int height, int width, int starty, int startx, int n);
+void create_board(int n,int **board);
 
 int main(int argc, char *argv[]){
-
+    WINDOW *win;
     TILE tile;
-    int ch, n;
-    int board[3][3];
-
-    int player = rand() % 2;
-    char human = (player == 1) ? 'X' : 'O';
-    char computer = (player != 1) ? 'X' : 'O';
+    int **board;
     
-    if(argc <2){
-	printf("Type here!");
-	exit(99);
-    }
+    int ch, n;
     n = atoi(argv[1]);
-
+    /*srand((unsigned) time(NULL));
+    int player = rand() % 100;
+    bool playerX = (player % 2 == 0) ? true : false;
+    bool playerO = (player % 2 == 1) ? true : false;*/
+    
+    board=(int **)calloc(n,sizeof(int*));
+    for(int i=0;i<n;i++){
+	*(board+i)=(int *)calloc(n,sizeof(int));
+    }
+    
+    
     initscr();			
     start_color();		
-    cbreak();			
+    raw();			
 				
-    keypad(stdscr, TRUE);	
     noecho();
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
 
 
+    keypad(stdscr, TRUE);
     attron(COLOR_PAIR(1));
-    printw("Press F1 to exit");
+    printw("Press Q to exit");
     refresh();
     attroff(COLOR_PAIR(1));
    
-    /* Initialize the window parameters */
+    // Initialize the window parameters
     init_tile(&tile, n);
-    create_board(&tile, n);
-    refresh();
+    win = create_newwin(tile.h, tile.w, tile.y, tile.x,n);
 
    // attron(COLOR_PAIR(2));
    // move(win.starty+1,win.startx+1);
    // attroff(COLOR_PAIR(2));
-    while((ch = getch()) != KEY_F(1)){
-	switch(ch){	
-	    case KEY_RIGHT:
-		move(4,3);
-		clrtoeol();
-		mvprintw(3,3,"Space works");
-		break;
+    wmove(win, tile.y, tile.x);
+    while((ch = getch()) != 'q'){
+	switch(ch){
 	    case KEY_LEFT:
-		move(3,3);
-		clrtoeol();
-		mvprintw(4,3,"Space works");
+		wmove(win, tile.y, tile.x--);
+		wrefresh(win);
+		break;
+	    case KEY_RIGHT:
+		wmove(win, tile.y, tile.x++);
+		wrefresh(win);
+		break;
+	    case KEY_DOWN:
+   		wattron(win,COLOR_PAIR(2));
+		mvwprintw(win,2,4,"#");
+		wrefresh(win);
+		wattroff(win,COLOR_PAIR(2));
 		break;
 	}
     }
     
-    endwin();			/* End curses mode		  */
+    endwin();  
     return 0;
 }
 
 void init_tile(TILE *tile, int n){
 
-    tile->h=6;
-    tile->w=8;
-    tile->y=(LINES - (tile->h)*n)/2;
-    tile->x=(COLS - (tile->w)*n)/2;
-
+    tile->h=(HEIGHT*n)+1;
+    tile->w=(WIDTH*n)+1;
+    tile->y=(LINES - (tile->h))/2;
+    tile->x=(COLS - (tile->w))/2;
+    tile->state=(-1);
 }
 
-void create_board(TILE *tile,int n){
-    
-    WINDOW *local_win;
-    local_win = newwin(tile->h, tile->w, tile->y, tile->x);
-    refresh();
-    box(local_win,0 ,0);
-    wrefresh(local_win);		
+WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
 
-    for(int i=0;i<n;i++){
-	for(int j=0;j<n;j++){
+    WINDOW *local_win = newwin(height, width, starty, startx);
+    box(local_win, 0, 0);
+
+    for(int i=1;i<n;i++){
+	int newX, newY;
+	mvwhline(local_win, i*i, 1, 0, width-2); 
+	mvwvline(local_win, 1, i*i, 0, height-2);
+    }
+    wrefresh(local_win);
+
+    return (local_win);
+}
+
+
+void create_board(int n,int **board){
     
-	    mvprintw((tile->y+tile->h)+i,(tile->x+tile->w)+j,"%d -- %d", i, j);
-    
+    if(n<3){
+	printf("Argument is too small \n");
+	exit(1);
+    }
+    for(int i=0;i<3;i++){
+	for(int j=0;j<3;j++){
+	    printf("%d ", *(*(board+i)+j));
 	}
 	printf("\n");
     }
+
 }
