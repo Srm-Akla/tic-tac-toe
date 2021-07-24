@@ -5,40 +5,45 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define	WIDTH  8
-#define	HEIGHT 6
+#define	WIDTH  6
+#define	HEIGHT 4
 
 typedef struct _tile{
     int x, y, h, w;
-    int state;
     
 }TILE;
 
 void init_tile(TILE *tile, int n);
 WINDOW *create_newwin(int height, int width, int starty, int startx, int n);
-void create_board(int n,int **board);
+void create_board(int n,char **board);
+
+void check_win(char **board, int n);
+void movement(WINDOW *win, int x, int y);
 
 int main(int argc, char *argv[]){
     WINDOW *win;
     TILE tile;
-    int **board;
+    char **board;
     
-    int ch, n;
-    n = atoi(argv[1]);
-    /*srand((unsigned) time(NULL));
-    int player = rand() % 100;
-    bool playerX = (player % 2 == 0) ? true : false;
-    bool playerO = (player % 2 == 1) ? true : false;*/
+    int ch, n=6;
+    int score[2]={0,0};
+    char player[2];
+
+    //n = atoi(argv[1]);
+    srand((unsigned) time(NULL));
+    int random = rand() % 100;
+    player[0] = (random % 2 == 0) ? 'X':'O';
+    player[1] = (random % 2 == 1) ? 'X':'O';
     
-    board=(int **)calloc(n,sizeof(int*));
-    for(int i=0;i<n;i++){
-	*(board+i)=(int *)calloc(n,sizeof(int));
-    }
-    
-    
+    board = (char**)calloc(n,sizeof(char*));
+    for(int i=0;i<n;i++)
+	*(board+i)=(char*)calloc(n,sizeof(char));
+
+    int half_width = (WIDTH/2);
+    int half_height= (HEIGHT/2);
     initscr();			
     start_color();		
-    raw();			
+    cbreak();			
 				
     noecho();
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
@@ -55,30 +60,51 @@ int main(int argc, char *argv[]){
     init_tile(&tile, n);
     win = create_newwin(tile.h, tile.w, tile.y, tile.x,n);
 
-   // attron(COLOR_PAIR(2));
-   // move(win.starty+1,win.startx+1);
-   // attroff(COLOR_PAIR(2));
-    wmove(win, tile.y, tile.x);
+    attron(COLOR_PAIR(2));
+    mvprintw(tile.y-3,tile.x,"Player_%c: %d (You)", player[0], score[0]);
+    mvprintw(tile.y-2,tile.x,"Player_%c: %d", player[1], score[1]);
+    attroff(COLOR_PAIR(2));
+    
+    wmove(win, half_height, half_width);
+    //create_board(n,board);
+    refresh();
     while((ch = getch()) != 'q'){
 	switch(ch){
-	    case KEY_LEFT:
-		wmove(win, tile.y, tile.x--);
-		wrefresh(win);
-		break;
-	    case KEY_RIGHT:
-		wmove(win, tile.y, tile.x++);
+	    case KEY_UP:
+		wmove(win, (half_height)-=HEIGHT, half_width);
 		wrefresh(win);
 		break;
 	    case KEY_DOWN:
+		wmove(win, (half_height)+=HEIGHT, half_width);
+		wrefresh(win);
+		break;
+	    case KEY_LEFT:
+		wmove(win, (half_height), half_width-=WIDTH );
+		wrefresh(win);
+		break;
+	    case KEY_RIGHT:
+		wmove(win, (half_height), half_width+=WIDTH );
+		wrefresh(win);
+		break;
+	    case KEY_F(1):
    		wattron(win,COLOR_PAIR(2));
-		mvwprintw(win,2,4,"#");
+		mvwprintw(win,half_height,half_width,"#");
+		wrefresh(win);
+		wattroff(win,COLOR_PAIR(2));
+		break;
+	    case ' ':
+   		wattron(win,COLOR_PAIR(2));
+		mvwprintw(win,half_height,half_width,"%c",player[0]);
 		wrefresh(win);
 		wattroff(win,COLOR_PAIR(2));
 		break;
 	}
     }
-    
+
     endwin();  
+    free(board);
+    
+
     return 0;
 }
 
@@ -88,7 +114,6 @@ void init_tile(TILE *tile, int n){
     tile->w=(WIDTH*n)+1;
     tile->y=(LINES - (tile->h))/2;
     tile->x=(COLS - (tile->w))/2;
-    tile->state=(-1);
 }
 
 WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
@@ -97,9 +122,8 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
     box(local_win, 0, 0);
 
     for(int i=1;i<n;i++){
-	int newX, newY;
-	mvwhline(local_win, i*i, 1, 0, width-2); 
-	mvwvline(local_win, 1, i*i, 0, height-2);
+	mvwhline(local_win, HEIGHT*i, 1, 0, width-2); 
+	mvwvline(local_win, 1,WIDTH*i, 0, height-2);
     }
     wrefresh(local_win);
 
@@ -107,17 +131,39 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
 }
 
 
-void create_board(int n,int **board){
+void create_board(int n,char **board){
     
     if(n<3){
 	printf("Argument is too small \n");
 	exit(1);
     }
-    for(int i=0;i<3;i++){
-	for(int j=0;j<3;j++){
-	    printf("%d ", *(*(board+i)+j));
+    
+    /*
+    for(int i=0;i<n;i++){
+	for(int j=0;j<n;j++){
+	    *(*(board+i)+j)='#';
 	}
-	printf("\n");
+    }
+    for(int i=0;i<n;i++){
+	for(int j=0;j<n;j++){
+	    mvprintw((half_height),(WIDTH/2),"%c",board[i][j]);
+	}
+    }*/
+}
+
+void movement(WINDOW *win, int x, int y){
+
+}
+
+void check_win(char **board, int n){
+
+    for(int i = 0; i<n;i++){
+	for(int j=0; j<n; j++){
+	    if(*(*(board+i)+j)=='X'){
+		printf("All X");
+		exit(1);
+	    }
+	}
     }
 
 }
