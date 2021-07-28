@@ -3,10 +3,17 @@
 #include <ncurses.h>
 #include <time.h>
 #include <string.h>
-#include <stdbool.h>
 
 #define	WIDTH  6
 #define	HEIGHT 4
+
+int half_width = (WIDTH/2);
+int half_height= (HEIGHT/2);
+int matrix[3][3]={
+    {1,2,3},
+    {4,5,6},
+    {7,8,9}
+};
 
 typedef struct _tile{
     int x, y, h, w;
@@ -15,7 +22,7 @@ typedef struct _tile{
 
 void init_tile(TILE *tile, int n);
 WINDOW *create_newwin(int height, int width, int starty, int startx, int n);
-void create_board(int n,char **board);
+void create_board(WINDOW *win, int n,int matrix[3][3]);
 
 void check_win(char **board, int n);
 void movement(WINDOW *win, int x, int y);
@@ -25,13 +32,13 @@ int main(int argc, char *argv[]){
     TILE tile;
     char **board;
     
-    int ch, n=6;
-    int score[2]={0,0};
+    int ch, n=3;
+    static int score[2]={0,0};
     char player[2];
 
     //n = atoi(argv[1]);
     srand((unsigned) time(NULL));
-    int random = rand() % 100;
+    const int random = rand() % 100;
     player[0] = (random % 2 == 0) ? 'X':'O';
     player[1] = (random % 2 == 1) ? 'X':'O';
     
@@ -39,8 +46,7 @@ int main(int argc, char *argv[]){
     for(int i=0;i<n;i++)
 	*(board+i)=(char*)calloc(n,sizeof(char));
 
-    int half_width = (WIDTH/2);
-    int half_height= (HEIGHT/2);
+
     initscr();			
     start_color();		
     cbreak();			
@@ -48,27 +54,31 @@ int main(int argc, char *argv[]){
     noecho();
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_RED, COLOR_BLACK);
 
 
     keypad(stdscr, TRUE);
     attron(COLOR_PAIR(1));
     printw("Press Q to exit");
+    printw(" -- ");
+    printw("Press F1 to clear screen");
     refresh();
     attroff(COLOR_PAIR(1));
    
     // Initialize the window parameters
     init_tile(&tile, n);
     win = create_newwin(tile.h, tile.w, tile.y, tile.x,n);
+    create_board(win,n,matrix);
 
     attron(COLOR_PAIR(2));
     mvprintw(tile.y-3,tile.x,"Player_%c: %d (You)", player[0], score[0]);
     mvprintw(tile.y-2,tile.x,"Player_%c: %d", player[1], score[1]);
     attroff(COLOR_PAIR(2));
     
-    wmove(win, half_height, half_width);
     //create_board(n,board);
     refresh();
     while((ch = getch()) != 'q'){
+    wmove(win, half_height, half_width);
 	switch(ch){
 	    case KEY_UP:
 		wmove(win, (half_height)-=HEIGHT, half_width);
@@ -86,11 +96,15 @@ int main(int argc, char *argv[]){
 		wmove(win, (half_height), half_width+=WIDTH );
 		wrefresh(win);
 		break;
-	    case KEY_F(1):
-   		wattron(win,COLOR_PAIR(2));
-		mvwprintw(win,half_height,half_width,"#");
+	    case 'e':
+   		wattron(win,COLOR_PAIR(3));
+		mvwprintw(win,half_height,half_width,"%c",player[1]);
 		wrefresh(win);
-		wattroff(win,COLOR_PAIR(2));
+		wattroff(win,COLOR_PAIR(3));
+		break;
+	    case KEY_F(1):
+		wclear(win);
+		wrefresh(win);
 		break;
 	    case ' ':
    		wattron(win,COLOR_PAIR(2));
@@ -131,24 +145,17 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
 }
 
 
-void create_board(int n,char **board){
+void create_board(WINDOW *win,int n,int matrix[3][3]){
     
-    if(n<3){
-	printf("Argument is too small \n");
-	exit(1);
-    }
-    
-    /*
     for(int i=0;i<n;i++){
 	for(int j=0;j<n;j++){
-	    *(*(board+i)+j)='#';
+	    mvwprintw(win,(half_height),(half_width),"%d",matrix[i][j]);
+	    (half_width)+=WIDTH;
+	    wrefresh(win);
 	}
+	half_height+=HEIGHT;
+	half_width = WIDTH/2;
     }
-    for(int i=0;i<n;i++){
-	for(int j=0;j<n;j++){
-	    mvprintw((half_height),(WIDTH/2),"%c",board[i][j]);
-	}
-    }*/
 }
 
 void movement(WINDOW *win, int x, int y){
@@ -157,13 +164,5 @@ void movement(WINDOW *win, int x, int y){
 
 void check_win(char **board, int n){
 
-    for(int i = 0; i<n;i++){
-	for(int j=0; j<n; j++){
-	    if(*(*(board+i)+j)=='X'){
-		printf("All X");
-		exit(1);
-	    }
-	}
-    }
 
 }
