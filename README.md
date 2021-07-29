@@ -4,3 +4,4 @@
 
 Simple game written in C using ncurses.
 
+![Image](tic-tac-toe.png)
