@@ -9,6 +9,7 @@
 
 int half_width = (WIDTH/2);
 int half_height= (HEIGHT/2);
+
 int matrix[3][3]={
     {1,2,3},
     {4,5,6},
@@ -22,16 +23,16 @@ typedef struct _tile{
 
 void init_tile(TILE *tile, int n);
 WINDOW *create_newwin(int height, int width, int starty, int startx, int n);
-void create_board(WINDOW *win, int n,int matrix[3][3]);
 
+//void create_board(WINDOW *win, int n,int matrix[3][3]);
+void update_board(WINDOW *win, short *y, short *x, char **board, char player);
 void check_win(char **board, int n);
-void movement(WINDOW *win, int x, int y);
 
 int main(int argc, char *argv[]){
     WINDOW *win;
     TILE tile;
     char **board;
-    
+    short x,y;
     int ch, n=3;
     static int score[2]={0,0};
     char player[2];
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]){
     // Initialize the window parameters
     init_tile(&tile, n);
     win = create_newwin(tile.h, tile.w, tile.y, tile.x,n);
-    create_board(win,n,matrix);
+    //create_board(win,n,matrix);
 
     attron(COLOR_PAIR(2));
     mvprintw(tile.y-3,tile.x,"Player_%c: %d (You)", player[0], score[0]);
@@ -77,8 +78,9 @@ int main(int argc, char *argv[]){
     
     //create_board(n,board);
     refresh();
+    wmove(win, half_height,half_width);
+    wrefresh(win);
     while((ch = getch()) != 'q'){
-    wmove(win, half_height, half_width);
 	switch(ch){
 	    case KEY_UP:
 		wmove(win, (half_height)-=HEIGHT, half_width);
@@ -98,7 +100,9 @@ int main(int argc, char *argv[]){
 		break;
 	    case 'e':
    		wattron(win,COLOR_PAIR(3));
+		//waddch(win, player[1]);
 		mvwprintw(win,half_height,half_width,"%c",player[1]);
+		update_board(win, &y, &x, board, player[1]);
 		wrefresh(win);
 		wattroff(win,COLOR_PAIR(3));
 		break;
@@ -108,7 +112,10 @@ int main(int argc, char *argv[]){
 		break;
 	    case ' ':
    		wattron(win,COLOR_PAIR(2));
+		//waddch(win, player[0]);
 		mvwprintw(win,half_height,half_width,"%c",player[0]);
+		update_board(win, &y, &x, board, player[0]);
+		check_win(board,n);
 		wrefresh(win);
 		wattroff(win,COLOR_PAIR(2));
 		break;
@@ -116,9 +123,16 @@ int main(int argc, char *argv[]){
     }
 
     endwin();  
-    free(board);
     
+    for(int i=0;i<n;i++){
+	for(int j=0;j<n;j++){
+	    printf("%c ",*(*(board+i)+j));
+	}
+	printf("\n");
+    }
 
+    free(board);
+    //printf("%d -- %d \n", y, x);
     return 0;
 }
 
@@ -145,7 +159,7 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
 }
 
 
-void create_board(WINDOW *win,int n,int matrix[3][3]){
+/*void create_board(WINDOW *win,int n,int matrix[3][3]){
     
     for(int i=0;i<n;i++){
 	for(int j=0;j<n;j++){
@@ -156,13 +170,69 @@ void create_board(WINDOW *win,int n,int matrix[3][3]){
 	half_height+=HEIGHT;
 	half_width = WIDTH/2;
     }
-}
+}*/
 
-void movement(WINDOW *win, int x, int y){
+void update_board(WINDOW *win, short *y, short *x, char **board, char player){
+
+    getyx(win, *(y), *(x));
+    //printw("%d -- %d \n", x,y);
+    
+    switch(*y){
+	case 2:
+	    switch(*x){
+		case 4:
+		    *(*(board+0)+0)=player;
+		    break;
+		case 10:
+		    *(*(board+0)+1)=player;
+		    break;
+		case 16:
+		    *(*(board+0)+2)=player;
+		    break;
+	    }
+		    break;
+	case 6:
+	    switch(*x){
+		case 4:
+		    *(*(board+1)+0)=player;
+		    break;
+		case 10:
+		    *(*(board+1)+1)=player;
+		    break;
+		case 16:
+		    *(*(board+1)+2)=player;
+		    break;
+	    }
+		    break;
+	case 10:
+	    switch(*x){
+		case 4:
+		    *(*(board+2)+0)=player;
+		    break;
+		case 10:
+		    *(*(board+2)+1)=player;
+		    break;
+		case 16:
+		    *(*(board+2)+2)=player;
+		    break;
+	    }
+		    break;
+    }
+    
+
 
 }
 
 void check_win(char **board, int n){
 
+    if(*(*(board+0)+0)==*(*(board+0)+1) && *(*(board+0)+1)==*(*(board+0)+2)){
+
+	printw("Row 1 Win");
+    }
+    else if(*(*(board+1)+0)==*(*(board+1)+1) && *(*(board+1)+1)==*(*(board+1)+2)){
+
+	printw("Row 2");
+    }
+		    
 
 }
