@@ -22,6 +22,7 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n);
 //void create_board(WINDOW *win, int n,int matrix[3][3]);
 void update_board(WINDOW *win, short *y, short *x, char **board, char player);
 bool check_win(char **board, int n);
+void game_over(int x);
 
 int main(int argc, char *argv[]){
     WINDOW *win;
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]){
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
     init_pair(3, COLOR_RED, COLOR_BLACK);
+    init_pair(4, COLOR_MAGENTA, COLOR_BLACK);
 
 
     keypad(stdscr, TRUE);
@@ -70,7 +72,11 @@ int main(int argc, char *argv[]){
     mvprintw(tile.y-3,tile.x,"Player_%c: %d (You)", player[0], score[0]);
     mvprintw(tile.y-2,tile.x,"Player_%c: %d", player[1], score[1]);
     attroff(COLOR_PAIR(2));
-    
+    /*
+    attron(COLOR_PAIR(4));
+    game_over(tile.x);
+    attroff(COLOR_PAIR(4));
+    */
     //create_board(n,board);
     refresh();
     wmove(win, half_height,half_width);
@@ -109,10 +115,16 @@ int main(int argc, char *argv[]){
    		wattron(win,COLOR_PAIR(2));
 		//waddch(win, player[0]);
 		mvwprintw(win,half_height,half_width,"%c",player[0]);
-		update_board(win, &y, &x, board, player[0]);
-		check_win(board,n);
 		wrefresh(win);
 		wattroff(win,COLOR_PAIR(2));
+
+		update_board(win, &y, &x, board, player[0]);
+		if(check_win(board,n)==true){
+		    attron(COLOR_PAIR(4));
+		    game_over(tile.x);
+		    attroff(COLOR_PAIR(4));
+		}
+		wrefresh(win);
 		break;
 	}
     }
@@ -209,8 +221,16 @@ bool check_win(char **board, int n){
 
     if(*(*(board+0)+0)==*(*(board+0)+1) && *(*(board+0)+0)==*(*(board+0)+2)){
 
-//	printw("Row 1 Win");
 	return true;
     }
     return false;
+}
+
+void game_over(int x){
+
+    short y = LINES/3;
+    mvprintw(y,x+strlen("Game Over!")/2,"Game Over!");
+    getch();
+    endwin();
+    exit(EXIT_SUCCESS);
 }
