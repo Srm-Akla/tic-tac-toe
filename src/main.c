@@ -10,11 +10,6 @@
 int half_width = (WIDTH/2);
 int half_height= (HEIGHT/2);
 
-int matrix[3][3]={
-    {1,2,3},
-    {4,5,6},
-    {7,8,9}
-};
 
 typedef struct _tile{
     int x, y, h, w;
@@ -26,7 +21,7 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n);
 
 //void create_board(WINDOW *win, int n,int matrix[3][3]);
 void update_board(WINDOW *win, short *y, short *x, char **board, char player);
-void check_win(char **board, int n);
+bool check_win(char **board, int n);
 
 int main(int argc, char *argv[]){
     WINDOW *win;
@@ -159,19 +154,6 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
 }
 
 
-/*void create_board(WINDOW *win,int n,int matrix[3][3]){
-    
-    for(int i=0;i<n;i++){
-	for(int j=0;j<n;j++){
-	    mvwprintw(win,(half_height),(half_width),"%d",matrix[i][j]);
-	    (half_width)+=WIDTH;
-	    wrefresh(win);
-	}
-	half_height+=HEIGHT;
-	half_width = WIDTH/2;
-    }
-}*/
-
 void update_board(WINDOW *win, short *y, short *x, char **board, char player){
 
     getyx(win, *(y), *(x));
@@ -223,16 +205,12 @@ void update_board(WINDOW *win, short *y, short *x, char **board, char player){
 
 }
 
-void check_win(char **board, int n){
+bool check_win(char **board, int n){
 
-    if(*(*(board+0)+0)==*(*(board+0)+1) && *(*(board+0)+1)==*(*(board+0)+2)){
+    if(*(*(board+0)+0)==*(*(board+0)+1) && *(*(board+0)+0)==*(*(board+0)+2)){
 
-	printw("Row 1 Win");
+//	printw("Row 1 Win");
+	return true;
     }
-    else if(*(*(board+1)+0)==*(*(board+1)+1) && *(*(board+1)+1)==*(*(board+1)+2)){
-
-	printw("Row 2");
-    }
-		    
-
+    return false;
 }
