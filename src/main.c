@@ -7,42 +7,43 @@
 #define	WIDTH  6
 #define	HEIGHT 4
 
-int half_width = (WIDTH/2);
-int half_height= (HEIGHT/2);
+short half_width = (WIDTH/2);
+short half_height= (HEIGHT/2);
 
 
 typedef struct _tile{
-    int x, y, h, w;
+    short x, y, h, w;
     
 }TILE;
 
-void init_tile(TILE *tile, int n);
-WINDOW *create_newwin(int height, int width, int starty, int startx, int n);
+void init_tile(TILE *tile, short n);
+WINDOW *create_newwin(short height, short width, short starty, short startx, short n);
 
-//void create_board(WINDOW *win, int n,int matrix[3][3]);
+//void create_board(WINDOW *win, short n,short matrix[3][3]);
 void update_board(WINDOW *win, short *y, short *x, char **board, char player);
-bool check_win(char **board, int n);
-void game_over(int x);
+bool check_win(char **board, short *score, char player);
+short *update_score(char *player,  short *score);
+void game_over(short *x);
 
-int main(int argc, char *argv[]){
+int  main(int argc, char *argv[]){
     WINDOW *win;
     TILE tile;
     char **board;
     short x,y;
-    int ch, n=3;
-    static int score[2]={0,0};
+    short ch, n=3;
+    static short score[2]={0,0};
     char player[2];
 
     //n = atoi(argv[1]);
     srand((unsigned) time(NULL));
-    const int random = rand() % 100;
+    const short random = rand() % 100;
     player[0] = (random % 2 == 0) ? 'X':'O';
     player[1] = (random % 2 == 1) ? 'X':'O';
     
     board = (char**)calloc(n,sizeof(char*));
-    for(int i=0;i<n;i++)
+    for(short i=0;i<n;i++){
 	*(board+i)=(char*)calloc(n,sizeof(char));
-
+    }
 
     initscr();			
     start_color();		
@@ -72,12 +73,7 @@ int main(int argc, char *argv[]){
     mvprintw(tile.y-3,tile.x,"Player_%c: %d (You)", player[0], score[0]);
     mvprintw(tile.y-2,tile.x,"Player_%c: %d", player[1], score[1]);
     attroff(COLOR_PAIR(2));
-    /*
-    attron(COLOR_PAIR(4));
-    game_over(tile.x);
-    attroff(COLOR_PAIR(4));
-    */
-    //create_board(n,board);
+
     refresh();
     wmove(win, half_height,half_width);
     wrefresh(win);
@@ -103,9 +99,15 @@ int main(int argc, char *argv[]){
    		wattron(win,COLOR_PAIR(3));
 		//waddch(win, player[1]);
 		mvwprintw(win,half_height,half_width,"%c",player[1]);
-		update_board(win, &y, &x, board, player[1]);
-		wrefresh(win);
 		wattroff(win,COLOR_PAIR(3));
+		wrefresh(win);
+		update_board(win,&y, &x, board, player[1]);
+		if(check_win(board,&score[1], player[1])){
+		    attron(COLOR_PAIR(4));
+		    game_over(&tile.x);
+		    attroff(COLOR_PAIR(4));
+		}
+		wrefresh(win);
 		break;
 	    case KEY_F(1):
 		wclear(win);
@@ -118,10 +120,11 @@ int main(int argc, char *argv[]){
 		wrefresh(win);
 		wattroff(win,COLOR_PAIR(2));
 
-		update_board(win, &y, &x, board, player[0]);
-		if(check_win(board,n)==true){
+		update_board(win,&y, &x, board, player[0]);
+		if(check_win(board,&score[0], player[0])){
+		    refresh();
 		    attron(COLOR_PAIR(4));
-		    game_over(tile.x);
+		    game_over(&tile.x);
 		    attroff(COLOR_PAIR(4));
 		}
 		wrefresh(win);
@@ -130,20 +133,12 @@ int main(int argc, char *argv[]){
     }
 
     endwin();  
-    
-    for(int i=0;i<n;i++){
-	for(int j=0;j<n;j++){
-	    printf("%c ",*(*(board+i)+j));
-	}
-	printf("\n");
-    }
-
     free(board);
-    //printf("%d -- %d \n", y, x);
+
     return 0;
 }
 
-void init_tile(TILE *tile, int n){
+void init_tile(TILE *tile, short n){
 
     tile->h=(HEIGHT*n)+1;
     tile->w=(WIDTH*n)+1;
@@ -151,12 +146,12 @@ void init_tile(TILE *tile, int n){
     tile->x=(COLS - (tile->w))/2;
 }
 
-WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
+WINDOW *create_newwin(short height, short width, short starty, short startx, short n){
 
     WINDOW *local_win = newwin(height, width, starty, startx);
     box(local_win, 0, 0);
 
-    for(int i=1;i<n;i++){
+    for(short i=1;i<n;i++){
 	mvwhline(local_win, HEIGHT*i, 1, 0, width-2); 
 	mvwvline(local_win, 1,WIDTH*i, 0, height-2);
     }
@@ -165,8 +160,7 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, int n){
     return (local_win);
 }
 
-
-void update_board(WINDOW *win, short *y, short *x, char **board, char player){
+void update_board(WINDOW *win,short *y, short *x, char **board, char player){
 
     getyx(win, *(y), *(x));
     //printw("%d -- %d \n", x,y);
@@ -217,19 +211,58 @@ void update_board(WINDOW *win, short *y, short *x, char **board, char player){
 
 }
 
-bool check_win(char **board, int n){
+bool check_win(char **board, short *score, char player){
 
-    if(*(*(board+0)+0)==*(*(board+0)+1) && *(*(board+0)+0)==*(*(board+0)+2)){
+    // rows
+    if((*(*(board+0)+0) && *(*(board+0)+1)) == player && (*(*(board+0)+1) && *(*(board+0)+2)) == player){
+
+	*(score)+=1;
+	return true;
+    }
+    else if((*(*(board+1)+0) && *(*(board+1)+1)) == player && (*(*(board+1)+1) && *(*(board+1)+2)) == player){
 
 	return true;
     }
+    else if((*(*(board+2)+0) && *(*(board+2)+1)) == player && (*(*(board+2)+1) && *(*(board+2)+2)) == player){
+
+	return true;
+    }
+    // Columns
+    else if((*(*(board+0)+0) && *(*(board+1)+0)) == player && (*(*(board+1)+0) && *(*(board+2)+0)) == player){
+
+	return true;
+    }
+    else if((*(*(board+0)+1) && *(*(board+1)+1)) == player && (*(*(board+1)+1) && *(*(board+2)+1)) == player){
+
+	return true;
+    }
+    else if((*(*(board+0)+2) && *(*(board+1)+2)) == player && (*(*(board+1)+2) && *(*(board+2)+2)) == player){
+
+	return true;
+    }
+    // Diagonals
+    else if((*(*(board+0)+0) && *(*(board+1)+1)) == player && (*(*(board+1)+1) && *(*(board+2)+2)) == player){
+
+	return true;
+    }
+    else if((*(*(board+0)+2) && *(*(board+1)+1)) == player && (*(*(board+1)+1) && *(*(board+2)+0)) == player){
+
+	return true;
+    }
+
     return false;
 }
 
-void game_over(int x){
+short *update_score(char *player,  short *score){
+    *(score) += 1;
+    return score;
+
+}
+
+void game_over(short *x){
 
     short y = LINES/3;
-    mvprintw(y,x+strlen("Game Over!")/2,"Game Over!");
+    mvprintw(y,*(x)+strlen("Game Over!")/2,"Game Over!");
     getch();
     endwin();
     exit(EXIT_SUCCESS);
